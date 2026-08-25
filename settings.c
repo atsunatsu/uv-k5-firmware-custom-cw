@@ -71,6 +71,16 @@ void SETTINGS_InitEEPROM(void)
 	gEeprom.TAIL_TONE_ELIMINATION = (Data[6] < 2) ? Data[6] : false;
 	gEeprom.VFO_OPEN              = (Data[7] < 2) ? Data[7] : true;
 
+	// NR7Y previously left 0x0F22 bit 5 unused and always saved it clear.
+	// Clear (old installation) or erased (factory reset) selects the new
+	// default; selecting any legacy RxMode writes the bit set.
+	EEPROM_ReadBuffer(0x0F20, Data, 8);
+	gEeprom.MAIN_RX_SUB_TX = (Data[2] == 0xFF) || ((Data[2] & (1u << 5)) == 0);
+	if (gEeprom.MAIN_RX_SUB_TX) {
+		gEeprom.DUAL_WATCH = DUAL_WATCH_OFF;
+		gEeprom.CROSS_BAND_RX_TX = CROSS_BAND_OFF;
+	}
+
 	// 0E80..0E87
 	EEPROM_ReadBuffer(0x0E80, Data, 8);
 	gEeprom.ScreenChannel[0]   = IS_VALID_CHANNEL(Data[0]) ? Data[0] : (FREQ_CHANNEL_FIRST + BAND6_400MHz);
@@ -117,7 +127,7 @@ void SETTINGS_InitEEPROM(void)
 	gEeprom.KEY_M_LONG_PRESS_ACTION      = ((Data[0] >> 1) < ACTION_OPT_LEN) ? (Data[0] >> 1) : ACTION_OPT_NONE;
 	gEeprom.KEY_1_SHORT_PRESS_ACTION     = (Data[1] < ACTION_OPT_LEN) ? Data[1] : ACTION_OPT_MONITOR;
 	gEeprom.KEY_1_LONG_PRESS_ACTION      = (Data[2] < ACTION_OPT_LEN) ? Data[2] : ACTION_OPT_NONE;
-	gEeprom.KEY_2_SHORT_PRESS_ACTION     = (Data[3] < ACTION_OPT_LEN) ? Data[3] : ACTION_OPT_SCAN;
+	gEeprom.KEY_2_SHORT_PRESS_ACTION     = (Data[3] < ACTION_OPT_LEN) ? Data[3] : ACTION_OPT_INV_TRACK;
 	gEeprom.KEY_2_LONG_PRESS_ACTION      = (Data[4] < ACTION_OPT_LEN) ? Data[4] : ACTION_OPT_NONE;
 	gEeprom.SCAN_RESUME_MODE             = (Data[5] < 3)              ? Data[5] : SCAN_RESUME_CO;
 	gEeprom.AUTO_KEYPAD_LOCK             = (Data[6] < 2)              ? Data[6] : false;
@@ -235,7 +245,10 @@ void SETTINGS_InitEEPROM(void)
 	gEeprom.CW_SIDETONE_LEVEL = Data[0] == 0xff ? 4*21 : ((Data[0] >> 4) & 0x07) * 21;  // levels 0-6 scaled by 21 (max 6*21=126), default 4*21=105
 	gEeprom.CW_KEYER_MODE     = (Data[1] & 0x80) ? CW_IAMBIC_MODE_B : CW_IAMBIC_MODE_A;  // bit 7: 0=A, 1=B
 	gEeprom.CW_KEY_WPM        = ((Data[1] & 0x3f) < 31 && (Data[1] & 0x3f) >= 10) ? Data[1] & 0x3f : 18;  // bits 0-5, valid range 10-30, default 18 WPM
-	gEeprom.CW_KEY_INPUT_MENU      = (Data[2] < 0x80) ? (Data[2] & 0x0F) : 0;  // bits 5-0, range 0-9, default HANDKEY
+	const uint8_t cw_key_input_menu = Data[2] & 0x0F;
+	gEeprom.CW_KEY_INPUT_MENU = (Data[2] < 0x80 &&
+		cw_key_input_menu < ARRAY_SIZE(CW_KEY_INPUT_menu_to_bitmap)) ? cw_key_input_menu : 0;
+	// bits 0-3, range 0-9, default HANDKEY
 	gEeprom.CW_KEY_INPUT 	  = CW_KEY_INPUT_menu_to_bitmap[gEeprom.CW_KEY_INPUT_MENU];
 	gEeprom.CW_BREAKIN_ENABLE	  = (Data[2] < 0x80) ? ((Data[2] >> 6) & 0x01) : 1;  // bit 6: 0=break-in off, 1=break-in on, default on
 	// Data[3]: high bit = invalid, bits 0-6 = repeat delay (seconds)
@@ -363,6 +376,16 @@ uint32_t SETTINGS_FetchChannelFrequency(const int channel)
 	EEPROM_ReadBuffer(channel * 16, &info, sizeof(info));
 
 	return info.frequency;
+}
+
+uint8_t SETTINGS_FetchVfoStepSetting(const uint8_t VFO, const FREQUENCY_Band_t band)
+{
+	uint8_t data[8];
+	const uint16_t base = 0x0C80 + ((uint16_t)band * 32) + ((uint16_t)VFO * 16);
+
+	EEPROM_ReadBuffer(base + 8, data, sizeof(data));
+
+	return (data[6] < STEP_N_ELEM) ? data[6] : STEP_12_5kHz;
 }
 
 void SETTINGS_FetchChannelName(char *s, const int channel)
@@ -596,7 +619,10 @@ void SETTINGS_SaveSettings(void)
 		State[0] = (gEeprom.CW_TONE_FREQUENCY - 45) / 5 | ((level & 0x07) << 4);
 	}
 	State[1] = (gEeprom.CW_KEYER_MODE << 7) | (gEeprom.CW_KEY_WPM & 0x3F);  // mode in bit 7 (0=A, 1=B), WPM in bits 0-5
-	State[2] = (gEeprom.CW_KEY_INPUT_MENU & 0x1F) | ((gEeprom.CW_BREAKIN_ENABLE & 0x01) << 6);  // key input in bits 0-4, breakin bit 6
+	State[2] = (gEeprom.CW_KEY_INPUT_MENU & 0x0F)
+		| ((!gEeprom.MAIN_RX_SUB_TX) << 5)
+		| ((gEeprom.CW_BREAKIN_ENABLE & 0x01) << 6);
+	// key input bits 0-3, legacy-RxMode marker bit 5, break-in bit 6
 	// State[3]: store menu value (delay/2) in bits 0-6, clear high bit to mark valid
 	State[3] = (gEeprom.CW_MESSAGE_REPEAT_DELAY) & 0x7F;
 	// State[4..5]: CW_ADC_CABLE_10K (12-bit value, clear high bit to mark valid)
@@ -605,6 +631,15 @@ void SETTINGS_SaveSettings(void)
 	// State[6..7]: CW_ADC_CABLE_20K (12-bit value, clear high bit to mark valid)
 	State[6] = gEeprom.CW_ADC_CABLE_20K & 0xFF;
 	State[7] = (gEeprom.CW_ADC_CABLE_20K >> 8) & 0x7F;
+	EEPROM_WriteBuffer(0x0F20, State);
+#else
+	// The fifth RxMode is available without the CW modulator too. Preserve
+	// every CW-owned byte and update only its previously reserved marker bit.
+	EEPROM_ReadBuffer(0x0F20, State, 8);
+	if (State[2] == 0xFF)
+		State[2] = (1u << 6) | ((!gEeprom.MAIN_RX_SUB_TX) << 5); // valid CW defaults
+	else
+		State[2] = (State[2] & ~(1u << 5)) | ((!gEeprom.MAIN_RX_SUB_TX) << 5);
 	EEPROM_WriteBuffer(0x0F20, State);
 #endif
 

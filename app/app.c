@@ -37,6 +37,7 @@
 #include "app/main.h"
 #include "app/menu.h"
 #include "app/scanner.h"
+#include "app/splitrx.h"
 #ifdef ENABLE_UART
 	#include "app/uart.h"
 #endif
@@ -737,6 +738,8 @@ void APP_EndTransmission(void)
 {
 	// back to RX mode
 	RADIO_SendEndOfTransmission();
+	SPLITRX_EndTx();
+	SPLITRX_ApplyPendingInv();
 
 	gFlagEndTransmission = true;
 
@@ -1789,6 +1792,16 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 #endif
 
 if (gCurrentFunction == FUNCTION_TRANSMIT) {
+#ifdef ENABLE_CW_MODULATOR
+		// INV TRACK is safe during CW TX because its handler defers the toggle
+		// until the current keying session has returned to MAIN RX.
+		if (gCurrentVfo->Modulation == MODULATION_CW && Key == KEY_SIDE2 &&
+			((!bKeyHeld && gEeprom.KEY_2_SHORT_PRESS_ACTION == ACTION_OPT_INV_TRACK) ||
+			 ( bKeyHeld && gEeprom.KEY_2_LONG_PRESS_ACTION == ACTION_OPT_INV_TRACK))) {
+			ACTION_Handle(Key, bKeyPressed, bKeyHeld);
+			goto Skip;
+		}
+#endif
 #if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
 		if (gAlarmState == ALARM_STATE_OFF)
 #endif

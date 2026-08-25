@@ -147,6 +147,7 @@ enum ACTION_OPT_t {
 	ACTION_OPT_REPEAT_CWMSG4,
 #endif
 	ACTION_OPT_SPECTRUM,
+	ACTION_OPT_INV_TRACK,
 	ACTION_OPT_LEN
 };
 
@@ -223,6 +224,9 @@ typedef struct {
 	bool                  VFO_OPEN;
 	uint8_t               DUAL_WATCH;
 	uint8_t               CROSS_BAND_RX_TX;
+	// Fifth RxMode: user-selected MAIN receives, the other VFO transmits.
+	// EEPROM 0x0F22 bit 5: 0 = this mode, 1 = a legacy RxMode.
+	bool                  MAIN_RX_SUB_TX;
 	uint8_t               BATTERY_SAVE;
 	uint8_t               BACKLIGHT_TIME;
 	uint8_t               SCAN_RESUME_MODE;
@@ -328,6 +332,7 @@ extern EEPROM_Config_t gEeprom;
 void     SETTINGS_InitEEPROM(void);
 void     SETTINGS_LoadCalibration(void);
 uint32_t SETTINGS_FetchChannelFrequency(const int channel);
+uint8_t  SETTINGS_FetchVfoStepSetting(uint8_t VFO, FREQUENCY_Band_t band);
 void     SETTINGS_FetchChannelName(char *s, const int channel);
 void     SETTINGS_FactoryReset(bool bIsAll);
 #ifdef ENABLE_FMRADIO

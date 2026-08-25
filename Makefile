@@ -164,6 +164,7 @@ ifeq ($(ENABLE_SPECTRUM), 1)
 OBJS += app/spectrum.o
 endif
 OBJS += app/scanner.o
+OBJS += app/splitrx.o
 ifeq ($(ENABLE_UART),1)
 	OBJS += app/uart.o
 endif

@@ -14,6 +14,7 @@
  *     limitations under the License.
  */
 
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -225,8 +226,10 @@ const char* const gSubMenu_RXMode[] =
 	"MAIN\nONLY", 		// TX and RX on main only
 	"DUAL RX\nRESPOND", // Watch both and respond
 	"CROSS\nBAND", 		// TX on main, RX on secondary
-	"MAIN TX\nDUAL RX" 	// always TX on main, but RX on both
+	"MAIN TX\nDUAL RX", 	// always TX on main, but RX on both
+	"MAIN RX\nSUB TX"
 };
+static_assert(ARRAY_SIZE(gSubMenu_RXMode) == 5);
 
 #ifdef ENABLE_VOICE
 	const char gSubMenu_VOICE[][4] =
@@ -399,8 +402,9 @@ const t_sidefunction gSubMenu_SIDEFUNCTIONS[] =
 	{"REPEAT\nCW MSG4", ACTION_OPT_REPEAT_CWMSG4},
 #endif
 #ifdef ENABLE_SPECTRUM
-	{"SPECTRUM",         ACTION_OPT_SPECTRUM}
+	{"SPECTRUM",         ACTION_OPT_SPECTRUM},
 #endif
+	{"INV\nTRACK",       ACTION_OPT_INV_TRACK}
 };
 
 const uint8_t gSubMenu_SIDEFUNCTIONS_size = ARRAY_SIZE(gSubMenu_SIDEFUNCTIONS);

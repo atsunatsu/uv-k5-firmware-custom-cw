@@ -26,6 +26,7 @@
 #include "app/generic.h"
 #include "app/main.h"
 #include "app/scanner.h"
+#include "app/splitrx.h"
 
 #ifdef ENABLE_SPECTRUM
 #include "app/spectrum.h"
@@ -380,27 +381,35 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 				Frequency = frequencyBandTable[BAND_N_ELEM - 1].upper;
 			}
 
-			const FREQUENCY_Band_t band = FREQUENCY_GetBand(Frequency);
+			const FREQUENCY_Band_t target_band = FREQUENCY_GetBand(Frequency);
+			const uint32_t step = (gTxVfo->Band == target_band)
+				? gTxVfo->StepFrequency
+				: gStepFrequencyTable[SETTINGS_FetchVfoStepSetting(Vfo, target_band)];
 
+			Frequency = FREQUENCY_RoundToStep(Frequency, step);
+
+			if (Frequency >= BX4819_band1.upper && Frequency < BX4819_band2.lower)
+			{	// clamp the frequency to the limit
+				const uint32_t center = (BX4819_band1.upper + BX4819_band2.lower) / 2;
+				Frequency = (Frequency < center) ? BX4819_band1.upper - step : BX4819_band2.lower;
+			}
+
+			if (!SPLITRX_TuneMainFrequency(Frequency)) {
+				gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+				return;
+			}
+
+			const FREQUENCY_Band_t band = FREQUENCY_GetBand(Frequency);
 			if (gTxVfo->Band != band) {
 				gTxVfo->Band               = band;
 				gEeprom.ScreenChannel[Vfo] = band + FREQ_CHANNEL_FIRST;
 				gEeprom.FreqChannel[Vfo]   = band + FREQ_CHANNEL_FIRST;
 
 				SETTINGS_SaveVfoIndices();
-
 				RADIO_ConfigureChannel(Vfo, VFO_CONFIGURE_RELOAD);
+				// Reloading the destination band replaces its stored frequency.
+				gTxVfo->freq_config_RX.Frequency = Frequency;
 			}
-
-			Frequency = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
-
-			if (Frequency >= BX4819_band1.upper && Frequency < BX4819_band2.lower)
-			{	// clamp the frequency to the limit
-				const uint32_t center = (BX4819_band1.upper + BX4819_band2.lower) / 2;
-				Frequency = (Frequency < center) ? BX4819_band1.upper - gTxVfo->StepFrequency : BX4819_band2.lower;
-			}
-
-			gTxVfo->freq_config_RX.Frequency = Frequency;
 
 			gRequestSaveChannel = 1;
 			return;
@@ -667,7 +676,10 @@ static void MAIN_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 					gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
 					return;
 				}
-				gTxVfo->freq_config_RX.Frequency = frequency;
+				if (!SPLITRX_TuneMainFrequency(frequency)) {
+					gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+					return;
+				}
 				uint32_t rx_frequency = frequency;
 #ifdef ENABLE_CW_MODULATOR
 				if (gTxVfo->Modulation == MODULATION_CW && !gCW_CrossMode)

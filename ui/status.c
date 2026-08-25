@@ -21,6 +21,7 @@
 	#include "app/fm.h"
 #endif
 #include "app/scanner.h"
+#include "app/splitrx.h"
 #include "bitmaps.h"
 #include "driver/keyboard.h"
 #include "driver/st7565.h"
@@ -37,6 +38,8 @@
 
 void UI_DisplayStatus()
 {
+	enum { INV_STATUS_WIDTH = 3 * 7 }; // 6-pixel small font + 1-pixel spacing
+
 	gUpdateStatus = false;
 	memset(gStatusLine, 0, sizeof(gStatusLine));
 
@@ -109,7 +112,11 @@ void UI_DisplayStatus()
 
 	if(!SCANNER_IsScanning()) {
 		uint8_t dw = (gEeprom.DUAL_WATCH != DUAL_WATCH_OFF) + (gEeprom.CROSS_BAND_RX_TX != CROSS_BAND_OFF) * 2;
-		if(dw == 1 || dw == 3) { // DWR - dual watch + respond
+		if (SPLITRX_IsInvEnabled()) {
+			UI_PrintStringSmallBufferNormal("INV", line + x);
+			x1 = x + INV_STATUS_WIDTH;
+		}
+		else if(dw == 1 || dw == 3) { // DWR - dual watch + respond
 			if(gDualWatchActive)
 				memcpy(line + x + (dw==1?0:2), BITMAP_TDR1, sizeof(BITMAP_TDR1) - (dw==1?0:5));
 			else
@@ -119,7 +126,7 @@ void UI_DisplayStatus()
 			memcpy(line + x + 2, BITMAP_XB, sizeof(BITMAP_XB));
 		}
 	}
-	x += sizeof(BITMAP_TDR1) + 1;
+	x += SPLITRX_IsInvEnabled() ? INV_STATUS_WIDTH : sizeof(BITMAP_TDR1) + 1;
 
 #if defined(ENABLE_VOX) || defined(ENABLE_CW_MODULATOR)
 	{

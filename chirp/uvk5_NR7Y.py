@@ -74,7 +74,8 @@ KEYACTIONS_LIST = [
     "Repeat CW MSG 2",           # 19: ACTION_OPT_REPEAT_CWMSG2 (beta3)
     "Repeat CW MSG 3",           # 20: ACTION_OPT_REPEAT_CWMSG3 (beta3)
     "Repeat CW MSG 4",           # 21: ACTION_OPT_REPEAT_CWMSG4 (beta3)
-    # SPECTRUM disabled due to lack of space
+    "Spectrum (disabled)",       # 22: reserved ACTION_OPT_SPECTRUM slot
+    "INV Track",                 # 23: ACTION_OPT_INV_TRACK
 ]
 
 
@@ -885,5 +886,3 @@ class UVK5_NR7Y(uvk5_egzumer.UVK5RadioEgzumer):
             self._mmap[addr + i] = raw[i]
         
         LOG.info(f"Saved macro {idx}: '{text}' ({char_count} chars, checksum=0x{checksum:02x})")
-
-

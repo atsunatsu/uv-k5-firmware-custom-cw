@@ -20,6 +20,7 @@
 #include "am_fix.h"
 #include "app/cwkeyer.h"
 #include "app/dtmf.h"
+#include "app/splitrx.h"
 #ifdef ENABLE_FMRADIO
 	#include "app/fm.h"
 #endif
@@ -552,6 +553,10 @@ void RADIO_ApplyOffset(VFO_Info_t *pInfo)
 
 static void RADIO_SelectCurrentVfo(void)
 {
+	if (SPLITRX_IsTxActive()) {
+		gCurrentVfo = gTxVfo;
+		return;
+	}
 	// if crossband is active and DW not the gCurrentVfo is gTxVfo (gTxVfo/TX_VFO is only ever changed by the user)
 	// otherwise it is set to gRxVfo which is set to gTxVfo in RADIO_SelectVfos
 	// so in the end gCurrentVfo is equal to gTxVfo unless dual watch changes it on incomming transmition (again, this can only happen when XB off)
@@ -561,6 +566,9 @@ static void RADIO_SelectCurrentVfo(void)
 
 void RADIO_SelectVfos(void)
 {
+	if (SPLITRX_SelectRoleVfos())
+		return;
+
 	// if crossband without DW is used then RX_VFO is the opposite to the TX_VFO
 	gEeprom.RX_VFO = (gEeprom.CROSS_BAND_RX_TX == CROSS_BAND_OFF || gEeprom.DUAL_WATCH != DUAL_WATCH_OFF) ? gEeprom.TX_VFO : !gEeprom.TX_VFO;
 
@@ -999,6 +1007,7 @@ void RADIO_SetVfoState(VfoState_t State)
 void RADIO_PrepareTX(void)
 {
 	VfoState_t State = VFO_STATE_NORMAL;  // default to OK to TX
+	SPLITRX_BeginTx();
 
 	if (gEeprom.DUAL_WATCH != DUAL_WATCH_OFF)
 	{	// dual-RX is enabled
@@ -1059,6 +1068,7 @@ void RADIO_PrepareTX(void)
 		gDTMF_ReplyState = DTMF_REPLY_NONE;
 #endif
 		AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL);
+		SPLITRX_EndTx();
 		return;
 	}
 

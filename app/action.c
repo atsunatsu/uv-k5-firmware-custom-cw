@@ -29,6 +29,7 @@
 	#include "app/fm.h"
 #endif
 #include "app/scanner.h"
+#include "app/splitrx.h"
 #include "audio.h"
 #include "bsp/dp32g030/gpio.h"
 #ifdef ENABLE_FMRADIO
@@ -136,9 +137,15 @@ void (*action_opt_table[])(void) = {
 #else
 	[ACTION_OPT_SPECTRUM] = &FUNCTION_NOP,
 #endif
+	[ACTION_OPT_INV_TRACK] = &SPLITRX_ToggleInv,
 };
 
 static_assert(ARRAY_SIZE(action_opt_table) == ACTION_OPT_LEN);
+#ifdef ENABLE_CW_MODULATOR
+static_assert(ACTION_OPT_INV_TRACK == 23); // appended after all existing CW-build IDs
+#else
+static_assert(ACTION_OPT_INV_TRACK == 15); // appended after all existing non-CW IDs
+#endif
 
 void ACTION_Power(void)
 {

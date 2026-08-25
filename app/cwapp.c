@@ -25,6 +25,7 @@
 #include "app/cwmacro.h"
 #include "app/app.h"
 #include "app/menu.h"
+#include "app/splitrx.h"
 #include "audio.h"
 #include "driver/bk4819.h"
 #include "driver/bk4819-regs.h"
@@ -167,12 +168,19 @@ void CW_AppUpdate(void)
 
 			if (gCW_State == CW_INACTIVE)
 			{
+				if (SPLITRX_IsEnabled() && SPLITRX_GetSubVfo()->Modulation != MODULATION_CW) {
+					gPttIsPressed = false;
+					AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL);
+					break;
+				}
 				if(!AUDIO_IsAudioPathOn())
 				{
 					AUDIO_AudioPathOn();
 					SYSTEM_DelayMs(20);
 				}
 				RADIO_PrepareTX();
+				if (gCurrentFunction != FUNCTION_TRANSMIT)
+					gPttIsPressed = false;
 			}
 			else if (gCW_State == CW_SUSPENDED) {
 				RADIO_CW_BeginResume();
@@ -191,6 +199,8 @@ void CW_AppUpdate(void)
 		break;
 
 		case CW_ACTION_CARRIER_HOLD_ON:
+			if (gCW_State == CW_INACTIVE)
+				break;
 			gPttIsPressed = true;
 			gTxTimerCountdown_500ms = 0;
 			gCW_TxDisplayHoldoff_10ms = 200;
