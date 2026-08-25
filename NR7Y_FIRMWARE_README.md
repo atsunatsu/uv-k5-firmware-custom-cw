@@ -1,4 +1,8 @@
-NR7Y CW firmware README
+NR7Y CW firmware README / NR7Y CW 固件说明
+
+本文件保留完整英文上游功能参考；本 Fork 的中文及英文定制说明、上星流程和测试表见 [UVK6_SPLITCW_README.md](UVK6_SPLITCW_README.md)。
+
+This file retains the complete upstream English reference. For the fork-specific Chinese and English guide, satellite workflow, and test checklist, see [UVK6_SPLITCW_README.md](UVK6_SPLITCW_README.md).
 
 # v1.0
 > [!IMPORTANT]

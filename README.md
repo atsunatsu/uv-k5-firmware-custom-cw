@@ -1,4 +1,6 @@
-# UV-K5 / UV-K6 NR7Y Split-CW 卫星通联定制版
+# UV-K5 / UV-K6 NR7Y Split-CW 卫星通联定制版 / Satellite Communications Custom Build
+
+中文说明在前，English documentation follows the Chinese section.
 
 本项目基于 [zerodrool/uv-k5-firmware-custom-cw](https://github.com/zerodrool/uv-k5-firmware-custom-cw) 的 NR7Y CW 固件，面向 UV-K5 / UV-K6 V1 硬件增加 MAIN 接收、SUB 发射、倒置多普勒联调、CEC 直键和机身按键双桨功能。详细设计、EEPROM 兼容方案及实机测试表见 [UVK6_SPLITCW_README.md](UVK6_SPLITCW_README.md)。
 
@@ -8,12 +10,13 @@
 ## 本 Fork 的新增功能
 
 - `RxMode` 第五项 `MAIN RX / SUB TX`：空闲始终接收 MAIN，PTT 或 CW 发报时临时使用 SUB 发射，结束后约 300 ms 自动回 MAIN；屏幕选择和持久 `TX_VFO` 不被偷偷切换。
-- 发射时 SUB 行显示 `TX` 和实际发射频率，便于通过屏幕和 SDR 双重确认。
+- 发射时 SUB 行显示 `TX` 和配置的 `pTX` 频率。普通 CW 的 PLL 与该频率一致；若开启 `CWx`，实际载波会再加 `CWfreq`（默认 600 Hz），当前屏幕不包含这项偏移。
 - `INV TRACK`：开启后 MAIN 每次调谐的频差会等量反向应用到 SUB，适合倒置线性转发器的手动多普勒跟踪；关闭时 SUB 不跟随。
 - MAIN 可以用 CW 或 USB 接收；SUB 必须设为 CW 才能由 CW keyer 发射。
 - 保留 NR7Y 的 CEC Cable、CEC Cable Reversed、Iambic A/B、CW break-in、宏和真正载波键控。
 - `CEC HandKey`：不改机器，使用现有 10K/20K CEC 电阻线连接外部直键；任一电阻触点都直接控制载波，不按 WPM 自动生成点划。
 - `PTT dah / EXIT dit` 与反向项：用机身 PTT、EXIT 组成 Iambic 双桨，支持 squeeze；主屏幕、CPO 及 CW 宏录制期间 EXIT 属于 keyer，其他菜单中仍可正常返回。
+- `CWmsg` Record/Play/Repeat 在 Split 模式下检查真正的 SUB 发射角色，因此 MAIN 可保持 USB 接收；PTT+EXIT 录制时按 MENU 保存。
 - CHIRP 驱动已同步新增 CW 输入项，并正确保留 Split-RxMode 使用的 EEPROM bit 5。
 
 ## 推荐设置
@@ -34,7 +37,7 @@
 1. 从卫星运营方或可靠的实时跟踪资料确认本次过境、上/下行频率、模式、极化和是否开放业余发射；不要把 README 中的示例频率当成当前频率表。
 2. 把下行设到 MAIN，把上行设到 SUB；先选低功率，并确认 SUB 的 TX lock、带宽和 CW 模式正确。
 3. 设置 `RxMode = MAIN RX / SUB TX`。空闲时只监听 MAIN，使用 UP/DOWN 或直接输入频率调 MAIN。
-4. 用另一台接收机或 SDR 监听 SUB。在假负载或合法测试条件下轻点电键，确认只有 SUB 频率出现 RF，且屏幕 SUB 行显示 `TX`。
+4. 用另一台接收机或 SDR 监听 SUB。在假负载或合法测试条件下轻点电键，确认只有 SUB 附近出现 RF，且屏幕 SUB 行显示 `TX`。上星普通 CW 建议关闭 `CWx`；若开启，实际载波为显示值加 `CWfreq`。
 5. 使用 CEC 双桨、CEC 直键或 PTT+EXIT 发报。松键后保持约 300 ms CW hang，再自动恢复 MAIN RX。
 6. 对倒置转发器按一次 `INV TRACK`，状态栏出现 `INV`。例如 MAIN 从 435.6200 降到 435.6195 MHz 时，SUB 会从 145.9850 升到 145.9855 MHz；再次按键关闭联调。
 7. 发报过程中切换 INV 只会记录请求，完整 TX session 结束并回到 MAIN 后才生效，不会在一个 dit/dah 中途改频。
@@ -59,6 +62,74 @@ make
 ```
 
 默认启用 `ENABLE_CW_MODULATOR=1` 和 `ENABLE_LTO=1`，输出 `firmware.bin` 与可供常用刷机工具使用的 `firmware.packed.bin`。无 CW 条件编译验证可使用：
+
+```sh
+make clean ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
+make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
+```
+
+## English
+
+This fork is based on the NR7Y CW firmware from [zerodrool/uv-k5-firmware-custom-cw](https://github.com/zerodrool/uv-k5-firmware-custom-cw). It adds fixed MAIN receive, temporary SUB transmit, inverted Doppler tracking, CEC straight-key support, and a front-panel paddle for UV-K5 / UV-K6 V1 radios. See [UVK6_SPLITCW_README.md](UVK6_SPLITCW_README.md) for the bilingual design notes, EEPROM compatibility details, and hardware test checklist.
+
+> [!WARNING]
+> Neither this firmware nor an inexpensive handheld guarantees spectral purity, power accuracy, or thermal performance on every band. Transmit only where your licence, local law, and the satellite operator permit it. Begin with a dummy load or minimum power and verify the actual RF frequency with an SDR or spectrum analyser.
+
+### Features added by this fork
+
+- The fifth `RxMode`, `MAIN RX / SUB TX`, keeps MAIN on receive and temporarily uses SUB for PTT or CW transmission. It returns to MAIN after the approximately 300 ms CW hang without silently changing the persistent selected VFO.
+- During transmission, the SUB row shows `TX` and the configured `pTX` frequency. In normal CW, the PLL uses that frequency. With `CWx` enabled, the actual carrier is shifted upward by `CWfreq` (600 Hz by default), and the current display does not include that shift.
+- `INV TRACK` applies every MAIN tuning delta equally and in the opposite direction to SUB for manual Doppler tracking on inverting linear transponders.
+- MAIN may receive in CW or USB; SUB must be in CW for the CW keyer to transmit.
+- Existing NR7Y CEC Cable, reversed cable, Iambic A/B, break-in, macros, and true carrier keying remain available.
+- `CEC HandKey` uses the existing 10K/20K CEC resistor cable as an external straight key without modifying the radio. Either contact directly follows the physical key-down duration.
+- `PTT dah / EXIT dit` and its reversed option turn the radio PTT and front-panel EXIT key into an Iambic paddle pair with squeeze support.
+- Split-mode `CWmsg` Record/Play/Repeat validates the actual SUB transmit-role VFO, so MAIN may remain in USB. In PTT+EXIT recording, press MENU to save.
+- The matching CHIRP driver includes the new CW input options while preserving the EEPROM bit used by Split RxMode.
+
+### Recommended setup
+
+| Item | Recommended value |
+| --- | --- |
+| MAIN | Satellite downlink/receive frequency, CW or USB |
+| SUB | Satellite uplink/transmit frequency, CW |
+| RxMode | `MAIN RX / SUB TX` |
+| CWkin, external paddle | `CEC Cable` or `CEC Cable Reversed` |
+| CWkin, external straight key | `CEC HandKey` |
+| CWkin, no cable | `PTT dah / EXIT dit` or reversed |
+| BKIN | ON for RF transmission; OFF for local practice |
+| F2Shrt / Side2 | `INV TRACK` after a full reset |
+
+### Satellite operating workflow
+
+1. Confirm the current pass, uplink/downlink frequencies, mode, polarisation, and amateur transmit status from the satellite operator or a reliable live source. Example frequencies in this README are not a current frequency plan.
+2. Put the downlink on MAIN and the uplink on SUB. Select low power and verify SUB TX lock, bandwidth, and CW modulation.
+3. Select `RxMode = MAIN RX / SUB TX`. MAIN remains the idle receiver and is tuned with UP/DOWN or direct frequency entry.
+4. Monitor SUB with another receiver or SDR. Under a dummy-load or otherwise legal test condition, tap the key and confirm RF near SUB while its row shows `TX`. Normal satellite CW should normally use `CWx` off; when it is on, the carrier is the displayed value plus `CWfreq`.
+5. Send with a CEC paddle, CEC straight key, or PTT+EXIT. The radio returns to MAIN receive after the CW hang.
+6. For an inverting transponder, enable `INV TRACK`; the status line shows `INV`. A 500 Hz downward MAIN adjustment produces a 500 Hz upward SUB adjustment.
+7. An INV change requested during CW transmission is deferred until the complete TX session ends, so frequency cannot change in the middle of a dit or dah.
+8. Log UTC, satellite, callsigns, grid locators, and the actual frequency correction after the contact.
+
+### Download and flashing
+
+Firmware is available from the [Latest Release](https://github.com/atsunatsu/uv-k5-firmware-custom-cw/releases/latest). The recommended browser flasher is [UVTools Firmware Flasher](https://egzumer.github.io/uvtools/).
+
+1. Download the `.packed.bin` asset and verify its SHA-256 value.
+2. Turn the radio off, connect a reliable Quansheng programming cable, and ensure the battery is charged.
+3. Hold PTT while powering on to enter flashing mode.
+4. In UVTools Flasher, select the serial port and `.packed.bin`, then start flashing.
+5. Do not power off, unplug the cable, or close the browser until success is reported.
+6. Reboot normally, confirm the version, and validate with minimum power before operating.
+
+### Build
+
+```sh
+make clean
+make
+```
+
+The default build enables `ENABLE_CW_MODULATOR=1` and `ENABLE_LTO=1` and produces `firmware.bin` plus flashable `firmware.packed.bin`. The no-CW compile matrix is:
 
 ```sh
 make clean ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0

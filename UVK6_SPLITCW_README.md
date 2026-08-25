@@ -1,5 +1,7 @@
 # UV-K5 / UV-K6 NR7Y MAIN RX / SUB TX + INV TRACK
 
+中文说明在前，English documentation follows the Chinese section.
+
 本定制基于 `zerodrool/uv-k5-firmware-custom-cw` 的 `main`，基线提交：
 `f91d365ae134c01e557fc0ffcc96f83e7e4e8bf8`（2026-04-24）。
 
@@ -93,3 +95,104 @@ make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
 ## 必须真机确认的项目
 
 RF 实际落点、PA 启停、CEC ADC 阈值、首个 dit、快速 squeeze、Iambic A/B 手感、约 300 ms 返回时序、状态栏在充电/锁键/F 键等组合下的实际观感，以及所有硬件拒发条件，无法仅靠交叉编译完全验证。
+
+---
+
+# English documentation
+
+This custom build is based on `zerodrool/uv-k5-firmware-custom-cw` `main` at commit `f91d365ae134c01e557fc0ffcc96f83e7e4e8bf8` (2026-04-24).
+
+## Functionality
+
+The fifth `RxMode`, `MAIN RX / SUB TX`, behaves as follows:
+
+- MAIN remains the selected on-screen VFO, idle receiver, keypad-entry target, and UP/DOWN tuning target.
+- SUB is a temporary transmit VFO and does not alter the persistent `gEeprom.TX_VFO` selection.
+- TX start temporarily points `gTxVfo/gCurrentVfo` to SUB; normal completion, timeout, or TX rejection always restores MAIN.
+- During TX the MAIN selection marker is unchanged, while the SUB row shows `TX` and its configured `pTX` frequency. In normal CW this is the PLL frequency; `CWx` adds `CWfreq` to the actual carrier and that extra offset is not included in the current display.
+- Keyer availability is determined by the SUB transmit-role modulation. MAIN may receive CW or USB as long as SUB is CW.
+- Selecting this mode disables `DUAL_WATCH` and `CROSS_BAND_RX_TX`; selecting an older mode leaves Split mode.
+- The upstream approximately 300 ms CW hang time is retained.
+
+`INV TRACK`, assigned to `F2Shrt` after a full EEPROM reset:
+
+- With INV off, only MAIN tunes.
+- With INV on, each MAIN frequency delta is applied equally and oppositely to SUB; the status line shows `INV`.
+- It covers UP/DOWN step tuning and direct frequency entry.
+- The paired SUB is checked against RX limits, its resulting TX frequency, and TX lock. Failure leaves both frequencies unchanged and emits an error beep.
+- Doppler steps update SUB in RAM without an EEPROM write for every step.
+- An INV request during CW TX is deferred until the complete session ends and MAIN receive is restored.
+
+CEC Cable, reversed cable, Iambic A/B, ADC paddle detection, macros, and the CW return delay retain the upstream implementation.
+
+## New CW input modes
+
+Three items are appended after the original `CWkin` entries 0–9, preserving older EEPROM menu numbers:
+
+- `CEC HandKey`: uses either 10K/20K resistor-coded CEC contact as a straight key without internal radio modification. Carrier key-down follows the physical press duration and does not generate WPM-timed elements. Radio PTT is unavailable in this ADC mode.
+- `PTT dah / EXIT dit`: PTT is dah and the front-panel EXIT key is dit, with squeeze and Iambic A/B support.
+- `PTT dit / EXIT dah`: reversed mapping of the preceding mode.
+
+PTT+EXIT owns EXIT on the main screen, Code Practice screen, and during CW macro recording. EXIT remains normal navigation in other menus. Use MENU to leave Code Practice or to save and leave macro recording.
+
+## Split macro recording fix
+
+`CWmsg1`–`CWmsg4` Record, Play, and Repeat validate `SPLITRX_GetTransmitRoleVfo()`. MAIN may therefore remain in USB while SUB is CW. This prevents the incorrect `no keyer!` error previously caused by checking idle MAIN.
+
+## EEPROM compatibility
+
+The implementation uses previously unused bit 5 of NR7Y CW settings byte `Data[2]` at `0x0F22`:
+
+- `0`: `MAIN RX / SUB TX`.
+- `1`: one of the four legacy RxModes, represented by the original `DUAL_WATCH` / `CROSS_BAND_RX_TX` bytes.
+
+Older NR7Y code always wrote this bit as zero, so upgraded and fully erased configurations default to the new mode. Selecting a legacy RxMode writes one and persists across reboot. CW and no-CW builds both read the marker, and no-CW saves preserve the other CW-owned bits.
+
+`INV TRACK` is appended to the action enum: ID 23 in the default CW build and ID 15 in the no-CW build. Existing action IDs and side-key EEPROM assignments are not shifted.
+
+## Build
+
+Default matrix:
+
+```sh
+make clean
+make
+```
+
+No-CW matrix, with Code Practice also disabled:
+
+```sh
+make clean ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
+make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
+```
+
+The default Makefile enables CW and LTO. Flash `firmware.packed.bin`; `firmware.bin` is the raw image.
+
+## Flashing
+
+1. Charge the battery and turn the radio off.
+2. Connect a reliable Quansheng programming cable.
+3. Hold PTT while powering on to enter flashing mode.
+4. Select `firmware.packed.bin` in [UVTools Flasher](https://egzumer.github.io/uvtools/) or a compatible local flasher.
+5. Wait for success before powering off or disconnecting anything, then reboot normally.
+
+A full EEPROM `Reset ALL` after flashing can be used when deterministic defaults are required.
+
+## First hardware test checklist
+
+1. Set `RxMode = MAIN RX / SUB TX`, MAIN to UHF CW/USB receive, and SUB to VHF CW; verify idle receive remains on MAIN.
+2. Monitor SUB with an SDR and send `VVV`; verify SUB shows `TX` and RF appears at the expected frequency. Keep `CWx` off for carrier-equals-display testing.
+3. Stop keying and verify MAIN receive returns after approximately 300 ms.
+4. With INV off, move MAIN by 500 Hz and verify SUB does not move.
+5. Enable INV and verify the status indicator; move MAIN down 500 Hz and verify SUB moves up 500 Hz.
+6. Disable INV and verify later MAIN tuning no longer moves SUB.
+7. Toggle INV during keying and verify it takes effect only after the full TX session ends.
+8. Put SUB on a TX-locked frequency and verify an error beep, no RF, and a clean return to MAIN.
+9. Test CEC Cable normal/reversed with `PARIS`, `CQ CQ`, `VVV`, and `599`, including first element, alternation, squeeze, and Iambic A/B.
+10. Test both CEC HandKey resistor contacts and verify physical key-down duration, no automatic element repetition, and normal CW hang recovery.
+11. Test both PTT+EXIT mappings, squeeze, Iambic A/B, and macro recording. EXIT must act as a paddle during recording, MENU must save, and EXIT must return to menu navigation afterwards.
+12. Cycle all five RxModes and reboot, verifying persistence and correct legacy DWR/XB behaviour.
+
+## Hardware validation still required
+
+Cross-compilation cannot fully validate RF frequency, PA timing, CEC ADC thresholds, the first dit, fast squeeze behaviour, Iambic feel, the approximately 300 ms recovery, combined status-line states, or every hardware TX rejection path. Verify these on real hardware using minimum power, a dummy load, an SDR, or suitable test equipment.
