@@ -19,6 +19,7 @@
 
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
+#include "app/splitrx.h"
 #ifdef ENABLE_AM_FIX
 	#include "am_fix.h"
 #endif
@@ -364,7 +365,12 @@ void UI_DisplayMain(void)
 		return;
 	}
 
-	unsigned int activeTxVFO = gRxVfoIsActive ? gEeprom.RX_VFO : gEeprom.TX_VFO;
+	// In MAIN RX / SUB TX mode the persistent TX_VFO remains the user's MAIN.
+	// Use the temporary role state for the TX marker/frequency so the display
+	// confirms the same SUB VFO that the RF path is actually using.
+	unsigned int activeTxVFO = SPLITRX_IsTxActive()
+		? (gEeprom.TX_VFO ^ 1u)
+		: (gRxVfoIsActive ? gEeprom.RX_VFO : gEeprom.TX_VFO);
 
 	for (unsigned int vfo_num = 0; vfo_num < 2; vfo_num++)
 	{

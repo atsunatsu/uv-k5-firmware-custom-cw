@@ -10,6 +10,7 @@
 - MAIN 仍是屏幕选中的 VFO、空闲接收 VFO、键盘输入及 UP/DOWN 调谐 VFO。
 - SUB 是临时发射 VFO；不会修改持久的 `gEeprom.TX_VFO` 主 VFO选择。
 - 开始发射时只临时将 `gTxVfo/gCurrentVfo` 指向 SUB；正常结束、超时或拒发后均恢复 MAIN。
+- 发射期间 MAIN 的用户选择标记不改变，但 SUB 行会显示 `TX` 及其实际 `pTX` 频率，便于直接确认 RF 使用的 VFO。
 - 选择该模式会关闭 `DUAL_WATCH` 与 `CROSS_BAND_RX_TX`。选择任一旧模式则退出本模式。
 - CW hang time 保持上游的 300 ms。
 
@@ -66,7 +67,7 @@ make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
 ## 第一轮实机测试 SOP
 
 1. `RxMode = MAIN RX / SUB TX`，MAIN=UHF CW、SUB=VHF CW；确认空闲只接收 MAIN，屏幕 MAIN 选择不变化。
-2. SDR 监听 SUB，用 CEC 双桨发送 `VVV`；确认 RF 只出现在 SUB 频率。
+2. SDR 监听 SUB，用 CEC 双桨发送 `VVV`；确认 SUB 行显示 `TX` 和 SUB 发射频率，且 RF 只出现在该频率。
 3. 停止发报；确认约 300 ms 后恢复 MAIN RX。
 4. INV OFF，MAIN 下调 500 Hz；确认 SUB 不变且无额外状态文字。
 5. 短按 Side2 打开 INV；确认只显示 `INV`。MAIN 下调 500 Hz；确认 SUB 上调 500 Hz。
