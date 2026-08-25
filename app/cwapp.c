@@ -87,7 +87,7 @@ void CW_AppUpdate(void)
 	if (gCW_AdcReadActive)  // CW_CRD mode: PTT pin is an output; no keyer FSM activity
 		return;
 
-	if (!(gTxVfo->Modulation == MODULATION_CW
+	if (!(SPLITRX_GetTransmitRoleVfo()->Modulation == MODULATION_CW
 #ifdef ENABLE_CODE_PRACTICE
 		|| gCW_CpoActive
 #endif
@@ -168,7 +168,7 @@ void CW_AppUpdate(void)
 
 			if (gCW_State == CW_INACTIVE)
 			{
-				if (SPLITRX_IsEnabled() && SPLITRX_GetSubVfo()->Modulation != MODULATION_CW) {
+				if (SPLITRX_GetTransmitRoleVfo()->Modulation != MODULATION_CW) {
 					gPttIsPressed = false;
 					AUDIO_PlayBeep(BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL);
 					break;

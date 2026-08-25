@@ -11,6 +11,7 @@
 - SUB 是临时发射 VFO；不会修改持久的 `gEeprom.TX_VFO` 主 VFO选择。
 - 开始发射时只临时将 `gTxVfo/gCurrentVfo` 指向 SUB；正常结束、超时或拒发后均恢复 MAIN。
 - 发射期间 MAIN 的用户选择标记不改变，但 SUB 行会显示 `TX` 及其实际 `pTX` 频率，便于直接确认 RF 使用的 VFO。
+- CW keyer 的启用由发射角色 SUB 的 modulation 决定；MAIN 可用 CW 或 USB 接收，只要 SUB 为 CW，CEC/Iambic 电键都能启动 SUB CW TX。
 - 选择该模式会关闭 `DUAL_WATCH` 与 `CROSS_BAND_RX_TX`。选择任一旧模式则退出本模式。
 - CW hang time 保持上游的 300 ms。
 

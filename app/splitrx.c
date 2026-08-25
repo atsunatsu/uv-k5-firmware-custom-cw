@@ -39,6 +39,11 @@ VFO_Info_t *SPLITRX_GetSubVfo(void)
 	return &gEeprom.VfoInfo[gEeprom.TX_VFO ^ 1u];
 }
 
+VFO_Info_t *SPLITRX_GetTransmitRoleVfo(void)
+{
+	return gEeprom.MAIN_RX_SUB_TX ? SPLITRX_GetSubVfo() : gTxVfo;
+}
+
 bool SPLITRX_SelectRoleVfos(void)
 {
 	if (!gEeprom.MAIN_RX_SUB_TX)

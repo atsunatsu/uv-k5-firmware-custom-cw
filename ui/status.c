@@ -140,7 +140,7 @@ void UI_DisplayStatus()
 		}
 #endif
 #ifdef ENABLE_CW_MODULATOR
-		if (!_vox_bkin_shown && gCurrentVfo->Modulation == MODULATION_CW && gEeprom.CW_BREAKIN_ENABLE) {
+		if (!_vox_bkin_shown && SPLITRX_GetTransmitRoleVfo()->Modulation == MODULATION_CW && gEeprom.CW_BREAKIN_ENABLE) {
 			memcpy(line + x, BITMAP_BKIN, sizeof(BITMAP_BKIN));
 			x1 = x + sizeof(BITMAP_BKIN) + 1;
 		}

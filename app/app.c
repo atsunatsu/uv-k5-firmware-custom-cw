@@ -1965,7 +1965,7 @@ Skip:
 		RADIO_SelectVfos();
 
 #ifdef ENABLE_CW_MODULATOR
-		CW_KeyerReconfigure(gTxVfo->Modulation==MODULATION_CW);
+		CW_KeyerReconfigure(SPLITRX_GetTransmitRoleVfo()->Modulation == MODULATION_CW);
 		gMonitor = (gRxVfo->Modulation == MODULATION_CW ||
 		            gRxVfo->Modulation == MODULATION_USB);
 #endif
