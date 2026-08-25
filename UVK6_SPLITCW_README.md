@@ -34,7 +34,7 @@ CEC Cable、CEC Cable Reversed、Iambic A/B、paddle ADC 判断、宏与 300 ms 
 - `PTT dah / EXIT dit`：机身 PTT 作为划、面板 EXIT 作为点，支持 squeeze 与 Iambic A/B。
 - `PTT dit / EXIT dah`：上述按键的点划方向反转。
 
-PTT+EXIT 模式只在主屏幕和 CPO 练习屏幕接管 EXIT；进入菜单后 EXIT 仍正常执行返回，且不会被当成电键。CPO 中选择 PTT+EXIT 时使用 MENU 退出练习屏幕。
+PTT+EXIT 模式在主屏幕、CPO 练习屏幕和 CW 宏录制期间接管 EXIT；其他菜单中 EXIT 仍正常执行返回。CPO 中选择 PTT+EXIT 时使用 MENU 退出练习屏幕，宏录制时按 MENU 保存并退出。
 
 ## EEPROM 兼容方案
 
@@ -87,7 +87,7 @@ make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
 8. 把 SUB 设置到 TX lock 禁止的频率后尝试 CW；确认错误音、无 RF，并仍恢复 MAIN RX，内部 VFO 不会卡在 SUB。
 9. 用 CEC Cable 与 CEC Cable Reversed 分别检查快速 `PARIS`、`CQ CQ`、`VVV`、`599`，覆盖首点、点划交替、squeeze、Iambic A 与 B。
 10. 选择 `CEC HandKey`，分别闭合 CEC 线的 10K 与 20K 触点；确认两者都按实际按压时长控制载波，长按不自动重复点划，松开约 300 ms 后回 MAIN RX。
-11. 依次选择两个 PTT+EXIT 模式，检查单点、单划、同时按压 squeeze、Iambic A/B 和正反向映射；进入菜单后确认 EXIT 仍能正常返回。
+11. 依次选择两个 PTT+EXIT 模式，检查单点、单划、同时按压 squeeze、Iambic A/B 和正反向映射；在 CWmsg 录制中确认 EXIT 可作为桨键且 MENU 能保存，退出录制后确认 EXIT 仍能正常返回。
 12. 在五个 RxMode 间反复切换并重启；确认用户选择保持，旧四模式下 DWR/XB 行为正常，第五模式下旧 scheduler 不切换 RX VFO。
 
 ## 必须真机确认的项目

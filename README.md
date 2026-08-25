@@ -13,7 +13,7 @@
 - MAIN 可以用 CW 或 USB 接收；SUB 必须设为 CW 才能由 CW keyer 发射。
 - 保留 NR7Y 的 CEC Cable、CEC Cable Reversed、Iambic A/B、CW break-in、宏和真正载波键控。
 - `CEC HandKey`：不改机器，使用现有 10K/20K CEC 电阻线连接外部直键；任一电阻触点都直接控制载波，不按 WPM 自动生成点划。
-- `PTT dah / EXIT dit` 与反向项：用机身 PTT、EXIT 组成 Iambic 双桨，支持 squeeze；主屏幕/CPO 中 EXIT 属于 keyer，菜单中仍可正常返回。
+- `PTT dah / EXIT dit` 与反向项：用机身 PTT、EXIT 组成 Iambic 双桨，支持 squeeze；主屏幕、CPO 及 CW 宏录制期间 EXIT 属于 keyer，其他菜单中仍可正常返回。
 - CHIRP 驱动已同步新增 CW 输入项，并正确保留 Split-RxMode 使用的 EEPROM bit 5。
 
 ## 推荐设置

@@ -99,11 +99,11 @@ Messages start empty - enter the menu and use arrows to change macro option:
 - play - Select with 'menu' button to begin playback
 
 ### CW Message Recording
-- Recordings are made using the currently programmed keyer settings and wpm. Attempting to record while not in CW modulation or without a keyer (while in handkey mode) will not work.
+- Recordings are made using the currently programmed keyer settings and wpm. In MAIN RX / SUB TX mode, recording and playback validate the SUB transmit-role VFO, so MAIN may remain in USB or another receive mode. Attempting to record without a keyer (while in handkey mode) will not work.
 - RF is not transmitted while recording. 
 - While recording is in progress, the display will show the most recently recorded characters, and a macro character count. 
 - To save the macro when complete, Push the 'menu' button. 
-- To exit the recording without saving, push the 'exit' button.
+- To exit the recording without saving, push the 'exit' button. In either PTT+EXIT paddle mode, EXIT remains the paddle during recording; press MENU to save and leave recording.
 
 ### CW Message Playback
 There are two ways to playback the CW messages:
@@ -178,7 +178,7 @@ Set the ADC thresholds for your CEC cable. After capturing values with the Read 
 
 **13. PTT dit / EXIT dah**
 - Reversed version of the preceding mode
-- EXIT is owned by the keyer on the main and Code Practice screens, but remains a normal navigation key in menus
+- EXIT is owned by the keyer on the main and Code Practice screens and during CW macro recording, but remains a normal navigation key in other menus
 - In Code Practice, press MENU instead of EXIT to leave the screen while either PTT+EXIT mode is selected
 
 # Prior Beta Changelists

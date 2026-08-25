@@ -125,8 +125,11 @@ static void CW_ReadPtt(bool *ptt_out)
 // matrix here keeps it on the same 1 ms sampling cadence as the CW keyer.
 static void CW_ReadExitButton(bool *exit_out)
 {
-    // Keep EXIT available for normal navigation outside the main/CPO screens.
-    if (gScreenToDisplay != DISPLAY_MAIN && gScreenToDisplay != DISPLAY_CPO) {
+    // Keep EXIT available for normal navigation outside the main/CPO screens,
+    // except while recording a macro where PTT+EXIT must remain a complete
+    // paddle pair. MENU saves and leaves macro recording.
+    if (gScreenToDisplay != DISPLAY_MAIN && gScreenToDisplay != DISPLAY_CPO &&
+        !gCW_Recording) {
         *exit_out = false;
         return;
     }

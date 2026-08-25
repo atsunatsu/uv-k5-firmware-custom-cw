@@ -1624,7 +1624,8 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 	if (Key == KEY_SIDE1 && gCW_KeyerUsingSD1) {
 		return;
 	}
-	if (Key == KEY_EXIT && gCW_KeyerUsingExit && gScreenToDisplay == DISPLAY_MAIN) {
+	if (Key == KEY_EXIT && gCW_KeyerUsingExit &&
+	    (gScreenToDisplay == DISPLAY_MAIN || gCW_Recording)) {
 		return;
 	}
 #endif
