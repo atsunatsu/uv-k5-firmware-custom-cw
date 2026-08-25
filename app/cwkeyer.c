@@ -76,7 +76,7 @@ static uint16_t       s_elem_start_count = 0;// element start counter (16-bit mi
 static bool           s_active_is_dit = false;
 static bool           s_pending_alternate = false; // alternate element queued
 /* last sampled paddles moved to app/cwhardware.c */
-static bool           s_last_handkey_ptt = false; // last PTT state for handkey mode
+static bool           s_last_handkey_down = false; // last input state for PTT/CEC handkey modes
 static uint16_t       s_elem_deadline_extra_ms = 0; // extra ms added to first-element deadline when audio path must be opened
 static char s_playback_buf[CW_MACRO_MAX_LEN * 2 + 1]; // decoded with spaces inserted
 static uint16_t s_playback_buf_len = 0; // strlen of the buffer
@@ -117,7 +117,7 @@ void CW_KeyerResetRuntime(void)
 
     s_active_is_dit = false;
     s_pending_alternate = false;
-    s_last_handkey_ptt = false;
+    s_last_handkey_down = false;
 
     // clear any stale edge memory
     CW_HW_ResetKeySamples();
@@ -134,6 +134,7 @@ static void CW_KeyerDeinit()
 
     gCW_KeyerManagesPtt = false;
     gCW_KeyerUsingSD1 = false;
+    gCW_KeyerUsingExit = false;
     s_enable_keyer = false;
     s_last_key_input_mode = 0xFF;
 }
@@ -157,6 +158,7 @@ void CW_KeyerReconfigure(bool enable)
     // take over PTT and SIDE1 (if was or is in the INPUT set) immediately
     gCW_KeyerManagesPtt = true;
     gCW_KeyerUsingSD1 |= gEeprom.CW_KEY_INPUT & CW_KEY_FLAG_SIDE1;
+    gCW_KeyerUsingExit |= gEeprom.CW_KEY_INPUT & CW_KEY_FLAG_EXIT;
     CW_KeyerResetRuntime();
     s_cfg_dirty = true; // Defer init until idle or gap
 }
@@ -211,6 +213,7 @@ static void CW_KeyerInit()
         CW_ConfigurePortGround(true);
 
     gCW_KeyerUsingSD1 = (key_input_mode & CW_KEY_FLAG_SIDE1) != 0;
+    gCW_KeyerUsingExit = (key_input_mode & CW_KEY_FLAG_EXIT) != 0;
     s_last_key_input_mode = key_input_mode;
     s_enable_keyer = true;
     gCW_KeyerManagesPtt = true;
@@ -418,7 +421,9 @@ bool CW_CheckKeyerInputs(uint8_t new_mode)
     CW_KeyerDeinit();
     
     // Handkey mode without port ground doesn't need further validation
-    if (new_mode & CW_KEY_FLAG_NO_KEYER && !(new_mode & CW_KEY_FLAG_PORT_GROUND)) {
+    if ((new_mode & CW_KEY_FLAG_NO_KEYER) &&
+        !(new_mode & CW_KEY_FLAG_PORT_GROUND) &&
+        !(new_mode & CW_KEY_FLAG_ADC)) {
         return true;
     }
     
@@ -520,31 +525,37 @@ bool CW_CheckKeyerInputs(uint8_t new_mode)
     return false;
 }
 
-CW_Action_t ptt_action(void)
+static CW_Action_t handkey_action(void)
 {
     CW_Action_t action = CW_ACTION_NONE;
 
-    // Read PTT button (PC5) - active low
-    bool ptt = !(GPIOC->DATA & (1U << GPIOC_PIN_PTT));
+    bool key_down;
+    if (gEeprom.CW_KEY_INPUT & CW_KEY_FLAG_ADC) {
+        // CEC HandKey: either resistor-coded contact operates the carrier.
+        // CW_ReadKeys supplies the same three-sample debounce used by paddles.
+        CW_Input in = {0};
+        CW_ReadKeys(&in);
+        key_down = in.dit || in.dah;
+    } else {
+        // PTT handkey: PC5 is active low.
+        key_down = !(GPIOC->DATA & (1U << GPIOC_PIN_PTT));
+    }
 
-    if (ptt && !s_last_handkey_ptt) {
-        // PTT pressed
+    if (key_down && !s_last_handkey_down) {
         action = CW_ACTION_CARRIER_ON;
 #if CW_KEYER_DEBUG
-        UART_Send("handkey PTT on\r\n", 17);
+        UART_Send("handkey on\r\n", 12);
 #endif
-    } else if (!ptt && s_last_handkey_ptt) {
-        // PTT released
+    } else if (!key_down && s_last_handkey_down) {
         action = CW_ACTION_CARRIER_OFF;
 #if CW_KEYER_DEBUG
-        UART_Send("handkey PTT off\r\n", 18);
+        UART_Send("handkey off\r\n", 13);
 #endif
-    } else if (ptt && s_last_handkey_ptt) {
-        // PTT being held - keep carrier active
+    } else if (key_down && s_last_handkey_down) {
         action = CW_ACTION_CARRIER_HOLD_ON;
     }
 
-    s_last_handkey_ptt = ptt;
+    s_last_handkey_down = key_down;
     return action;
 }
 
@@ -568,7 +579,7 @@ CW_Action_t CW_HandleState(void)
 
     // Check if keyer is disabled (handkey modes have NO_KEYER flag set)
     if (gEeprom.CW_KEY_INPUT & CW_KEY_FLAG_NO_KEYER) {
-        return ptt_action();
+        return handkey_action();
     }
 
     // Input struct - will be sampled at appropriate times in each state
@@ -617,7 +628,7 @@ CW_Action_t CW_HandleState(void)
     ///
     ///  ACTIVE
     ///
-    case CWK_STATE_ACTIVE_ELEMENT:
+    case CWK_STATE_ACTIVE_ELEMENT: {
         const uint32_t target = s_active_is_dit ? s_dit_count : s_dah_count;
         const uint32_t elapsed_elem = timer_millis_low16_since(s_elem_start_count);
 
@@ -675,6 +686,7 @@ CW_Action_t CW_HandleState(void)
             action = CW_ACTION_CARRIER_HOLD_ON;
         }
         break;
+    }
 
     ///
     ///   ELEMENT GAP

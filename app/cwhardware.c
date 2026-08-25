@@ -29,11 +29,13 @@
 #include "driver/gpio.h"
 #include "driver/systick.h"
 #include "driver/i2c.h"
+#include "driver/keyboard.h"
 #include "driver/uart.h"
 #include "driver/adc.h"
 #include "bsp/dp32g030/saradc.h"
 #include "driver/timer.h"
 #include "external/printf/printf.h"
+#include "ui/ui.h"
 
 #define ENABLE_CEC_KEYER_DEBUG 0
 
@@ -119,6 +121,18 @@ static void CW_ReadPtt(bool *ptt_out)
     *ptt_out = CW_ReadGpioDeglitched(&GPIOC->DATA, GPIOC_PIN_PTT, false);
 }
 
+// EXIT is part of the keypad matrix rather than a dedicated GPIO. Polling the
+// matrix here keeps it on the same 1 ms sampling cadence as the CW keyer.
+static void CW_ReadExitButton(bool *exit_out)
+{
+    // Keep EXIT available for normal navigation outside the main/CPO screens.
+    if (gScreenToDisplay != DISPLAY_MAIN && gScreenToDisplay != DISPLAY_CPO) {
+        *exit_out = false;
+        return;
+    }
+    *exit_out = KEYBOARD_Poll() == KEY_EXIT;
+}
+
 // static uint16_t ReadCH3()
 // {
 //     // OLD SINGLE SAMPLE CODE (keep for reference):
@@ -174,7 +188,9 @@ static void CW_ReadADCkeys(bool *tip_out, bool *ring_out)
 bool CW_ReadKeysForMode(uint8_t mode, bool *dit_out, bool *dah_out)
 {
     // Check if keyer is disabled (handkey modes)
-    if (mode & CW_KEY_FLAG_NO_KEYER && !(mode & CW_KEY_FLAG_PORT_GROUND)) {
+    if ((mode & CW_KEY_FLAG_NO_KEYER) &&
+        !(mode & CW_KEY_FLAG_PORT_GROUND) &&
+        !(mode & CW_KEY_FLAG_ADC)) {
         return false;
     }
 
@@ -202,6 +218,13 @@ bool CW_ReadKeysForMode(uint8_t mode, bool *dit_out, bool *dah_out)
     // Read button ring input if enabled
     if (mode & CW_KEY_FLAG_SIDE1) {
         CW_ReadSideButton(&hw_ring);
+    }
+
+    // EXIT can replace SIDE1 as the second built-in paddle input.
+    if (mode & CW_KEY_FLAG_EXIT) {
+        bool exit_pressed = false;
+        CW_ReadExitButton(&exit_pressed);
+        hw_ring = hw_ring || exit_pressed;
     }
 
     // Read port ring input if enabled and OR with button ring

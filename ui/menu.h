@@ -185,6 +185,7 @@ extern const t_sidefunction gSubMenu_SIDEFUNCTIONS[];
 extern const char		gSubmenu_SIDETONE[9][6];
 extern const char*        gSubMenu_CW_KEY_BUTTON[3];
 extern const char*        gSubMenu_CW_KEY_PORT[3];
+extern const uint8_t      gSubMenu_CW_KEY_INPUT_size;
 				         
 extern bool              gIsInSubMenu;
 				         

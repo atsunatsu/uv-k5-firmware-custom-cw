@@ -167,6 +167,20 @@ Set the ADC thresholds for your CEC cable. After capturing values with the Read 
 **10. CEC Cable Reversed**
 - Same as above with paddle orientation reversed.
 
+**11. CEC HandKey**
+- Straight-key mode for an unmodified radio using the existing 10k/20k CEC resistor cable
+- Either resistor-coded paddle contact keys the carrier directly; WPM and Iambic A/B do not alter the key-down duration
+- The radio PTT cannot be used in this ADC mode, as with the two CEC paddle modes
+
+**12. PTT dah / EXIT dit**
+- Uses the radio PTT and front-panel EXIT key as an Iambic paddle pair
+- PTT sends dah and EXIT sends dit; simultaneous presses support squeeze keying
+
+**13. PTT dit / EXIT dah**
+- Reversed version of the preceding mode
+- EXIT is owned by the keyer on the main and Code Practice screens, but remains a normal navigation key in menus
+- In Code Practice, press MENU instead of EXIT to leave the screen while either PTT+EXIT mode is selected
+
 # Prior Beta Changelists
 
 ## Changelist from beta5 -> beta6

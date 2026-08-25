@@ -254,6 +254,7 @@ uint8_t           gIsLocked = 0xFF;
 	volatile uint16_t gCW_SuspendCounter_1ms;
 	volatile CW_State_t        gCW_State = CW_INACTIVE;
 	volatile bool     gCW_KeyerUsingSD1 = false;
+	volatile bool     gCW_KeyerUsingExit = false;
 	volatile bool     gCW_KeyerManagesPtt = false;
 	volatile bool     gCW_CrossMode = false;
 	volatile uint16_t  gCW_TxDisplayHoldoff_10ms = 0;

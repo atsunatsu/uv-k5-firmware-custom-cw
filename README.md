@@ -1,3 +1,72 @@
+# UV-K5 / UV-K6 NR7Y Split-CW 卫星通联定制版
+
+本项目基于 [zerodrool/uv-k5-firmware-custom-cw](https://github.com/zerodrool/uv-k5-firmware-custom-cw) 的 NR7Y CW 固件，面向 UV-K5 / UV-K6 V1 硬件增加 MAIN 接收、SUB 发射、倒置多普勒联调、CEC 直键和机身按键双桨功能。详细设计、EEPROM 兼容方案及实机测试表见 [UVK6_SPLITCW_README.md](UVK6_SPLITCW_README.md)。
+
+> [!WARNING]
+> 固件和廉价手台均不保证满足所有频段的频谱纯度、功率或散热要求。只能在执照、当地法规和卫星运营方允许的频率及工作模式下发射。首次测试请接假负载或使用最低功率，并用 SDR/频谱仪确认实际发射频率；不要在不确定卫星状态、频率规划或发射许可时按键。
+
+## 本 Fork 的新增功能
+
+- `RxMode` 第五项 `MAIN RX / SUB TX`：空闲始终接收 MAIN，PTT 或 CW 发报时临时使用 SUB 发射，结束后约 300 ms 自动回 MAIN；屏幕选择和持久 `TX_VFO` 不被偷偷切换。
+- 发射时 SUB 行显示 `TX` 和实际发射频率，便于通过屏幕和 SDR 双重确认。
+- `INV TRACK`：开启后 MAIN 每次调谐的频差会等量反向应用到 SUB，适合倒置线性转发器的手动多普勒跟踪；关闭时 SUB 不跟随。
+- MAIN 可以用 CW 或 USB 接收；SUB 必须设为 CW 才能由 CW keyer 发射。
+- 保留 NR7Y 的 CEC Cable、CEC Cable Reversed、Iambic A/B、CW break-in、宏和真正载波键控。
+- `CEC HandKey`：不改机器，使用现有 10K/20K CEC 电阻线连接外部直键；任一电阻触点都直接控制载波，不按 WPM 自动生成点划。
+- `PTT dah / EXIT dit` 与反向项：用机身 PTT、EXIT 组成 Iambic 双桨，支持 squeeze；主屏幕/CPO 中 EXIT 属于 keyer，菜单中仍可正常返回。
+- CHIRP 驱动已同步新增 CW 输入项，并正确保留 Split-RxMode 使用的 EEPROM bit 5。
+
+## 推荐设置
+
+| 项目 | 建议值 |
+| --- | --- |
+| MAIN | 卫星下行/接收频率，CW 或 USB |
+| SUB | 卫星上行/发射频率，CW |
+| RxMode | `MAIN RX / SUB TX` |
+| CWkin（外置双桨） | `CEC Cable` 或 `CEC Cable Reversed` |
+| CWkin（外置直键） | `CEC HandKey` |
+| CWkin（不用线材） | `PTT dah / EXIT dit` 或反向项 |
+| BKIN | 需要 RF 发射时为 ON；本地练习可为 OFF |
+| F2Shrt / Side2 | `INV TRACK`（全复位后的默认值） |
+
+## 上星通联流程
+
+1. 从卫星运营方或可靠的实时跟踪资料确认本次过境、上/下行频率、模式、极化和是否开放业余发射；不要把 README 中的示例频率当成当前频率表。
+2. 把下行设到 MAIN，把上行设到 SUB；先选低功率，并确认 SUB 的 TX lock、带宽和 CW 模式正确。
+3. 设置 `RxMode = MAIN RX / SUB TX`。空闲时只监听 MAIN，使用 UP/DOWN 或直接输入频率调 MAIN。
+4. 用另一台接收机或 SDR 监听 SUB。在假负载或合法测试条件下轻点电键，确认只有 SUB 频率出现 RF，且屏幕 SUB 行显示 `TX`。
+5. 使用 CEC 双桨、CEC 直键或 PTT+EXIT 发报。松键后保持约 300 ms CW hang，再自动恢复 MAIN RX。
+6. 对倒置转发器按一次 `INV TRACK`，状态栏出现 `INV`。例如 MAIN 从 435.6200 降到 435.6195 MHz 时，SUB 会从 145.9850 升到 145.9855 MHz；再次按键关闭联调。
+7. 发报过程中切换 INV 只会记录请求，完整 TX session 结束并回到 MAIN 后才生效，不会在一个 dit/dah 中途改频。
+8. 通联后记录 UTC、卫星、呼号、网格和实际频率修正，必要时上传日志/QSL。
+
+## 下载与刷机
+
+发布固件见 [Latest Release](https://github.com/natsumikka-maker/uv-k5-firmware-custom-cw/releases/latest)。在线刷写推荐 [UVTools Firmware Flasher](https://egzumer.github.io/uvtools/)：
+
+1. 下载 Release 中名称带 `.packed.bin` 的文件并核对 SHA-256。
+2. 关闭电台，插紧可靠的 Quansheng 编程线并确认电池充足。
+3. 按住 PTT 开机进入刷机模式。
+4. 打开 UVTools 的 Flasher，选择串口和 `.packed.bin` 后开始刷写。
+5. 等待成功提示；刷写期间不要关机、拔线或断开浏览器。
+6. 正常重启后检查版本，再按本文测试流程用最低功率验证。
+
+## 构建
+
+```sh
+make clean
+make
+```
+
+默认启用 `ENABLE_CW_MODULATOR=1` 和 `ENABLE_LTO=1`，输出 `firmware.bin` 与可供常用刷机工具使用的 `firmware.packed.bin`。无 CW 条件编译验证可使用：
+
+```sh
+make clean ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
+make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
+```
+
+---
+
 # NR7Y's CW mod for the egzumer firmware
 
 This repository builds on the egzumer codebase by adding a set of features specifically for CW operators.

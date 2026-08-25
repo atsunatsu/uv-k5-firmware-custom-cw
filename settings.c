@@ -248,7 +248,7 @@ void SETTINGS_InitEEPROM(void)
 	const uint8_t cw_key_input_menu = Data[2] & 0x0F;
 	gEeprom.CW_KEY_INPUT_MENU = (Data[2] < 0x80 &&
 		cw_key_input_menu < ARRAY_SIZE(CW_KEY_INPUT_menu_to_bitmap)) ? cw_key_input_menu : 0;
-	// bits 0-3, range 0-9, default HANDKEY
+	// bits 0-3, range 0-12, default HANDKEY
 	gEeprom.CW_KEY_INPUT 	  = CW_KEY_INPUT_menu_to_bitmap[gEeprom.CW_KEY_INPUT_MENU];
 	gEeprom.CW_BREAKIN_ENABLE	  = (Data[2] < 0x80) ? ((Data[2] >> 6) & 0x01) : 1;  // bit 6: 0=break-in off, 1=break-in on, default on
 	// Data[3]: high bit = invalid, bits 0-6 = repeat delay (seconds)

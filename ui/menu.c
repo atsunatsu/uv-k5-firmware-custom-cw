@@ -427,8 +427,13 @@ const char* gSubMenu_CW_KEY_INPUT[] =
 	"PTT+TIP\ndah\nSD1+RING\ndit",
 	"PTT+TIP\ndit\nSD1+RING\ndah",
 	"CEC\nCable",
-	"CEC\nCable\nReversed"
+	"CEC\nCable\nReversed",
+	"CEC\nHandKey",
+	"PTT dah\nEXIT dit",
+	"PTT dit\nEXIT dah"
 };
+
+const uint8_t gSubMenu_CW_KEY_INPUT_size = ARRAY_SIZE(gSubMenu_CW_KEY_INPUT);
 
 const char* gSubMenu_CW_MSG[] =
 {

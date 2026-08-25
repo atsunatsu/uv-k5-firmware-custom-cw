@@ -1602,17 +1602,29 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
 #ifdef ENABLE_CODE_PRACTICE
 	if (gCW_CpoActive) {
-		if (Key == KEY_EXIT) {
+		if (Key == KEY_EXIT && !gCW_KeyerUsingExit) {
 			CPO_Exit();
 			gRequestDisplayScreen = DISPLAY_MAIN;
 			return;
 		}
+		// EXIT belongs to the paddle in PTT+EXIT mode; MENU becomes the
+		// unambiguous way to leave the code-practice screen.
+		if (Key == KEY_MENU && gCW_KeyerUsingExit) {
+			CPO_Exit();
+			gRequestDisplayScreen = DISPLAY_MAIN;
+			return;
+		}
+		if (Key == KEY_EXIT && gCW_KeyerUsingExit)
+			return;
 		CPO_ProcessKeys(Key, bKeyPressed, bKeyHeld);
 		return;
 	}
 #endif
 #ifdef ENABLE_CW_MODULATOR
 	if (Key == KEY_SIDE1 && gCW_KeyerUsingSD1) {
+		return;
+	}
+	if (Key == KEY_EXIT && gCW_KeyerUsingExit && gScreenToDisplay == DISPLAY_MAIN) {
 		return;
 	}
 #endif

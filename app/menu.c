@@ -398,7 +398,7 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
 
 		case MENU_CW_KEY_INPUT:
 			*pMin = 0;
-			*pMax = 9;
+			*pMax = gSubMenu_CW_KEY_INPUT_size - 1;
 			break;
 
 		case MENU_CW_MSG1:
@@ -941,7 +941,7 @@ void MENU_AcceptSetting(void)
 		case MENU_CW_MSG1:
 		case MENU_CW_MSG2:
 		case MENU_CW_MSG3:
-		case MENU_CW_MSG4:
+		case MENU_CW_MSG4: {
 			uint8_t macroIdx = UI_MENU_GetCurrentMenuId() - MENU_CW_MSG1;
 			// If gSubMenuSelection == 1, user selected "record new"
 			if (gSubMenuSelection == 1) {
@@ -981,6 +981,7 @@ void MENU_AcceptSetting(void)
 				return;
 			}
 			break;
+		}
 
 		case MENU_CW_MSG_REPEAT:
 			gEeprom.CW_MESSAGE_REPEAT_DELAY = gSubMenuSelection;

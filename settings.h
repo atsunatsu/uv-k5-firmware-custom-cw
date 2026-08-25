@@ -42,6 +42,7 @@ typedef enum POWER_OnDisplayMode_t POWER_OnDisplayMode_t;
 #define CW_KEY_FLAG_NO_KEYER      0x08  // 0=keyer enabled, 1=handkey only
 #define CW_KEY_FLAG_PORT_GROUND   0x10  // 0=no port ground, 1=use port ground
 #define CW_KEY_FLAG_ADC		  	  0x20  // 0=no ADC keyer, 1=use ADC (CEC cable) input
+#define CW_KEY_FLAG_EXIT          0x40  // 0=no EXIT paddle, 1=use EXIT as the second paddle
 
 // for reference, from ui/menu.c:
 	// "PTT\nHandKey",
@@ -54,9 +55,12 @@ typedef enum POWER_OnDisplayMode_t POWER_OnDisplayMode_t;
 	// "PTT+TIP\ndit\nSD1+RING\ndah",
 	// "CEC\nCable",
 	// "CEC\nCable\nReversed"
+	// "CEC\nHandKey"
+	// "PTT dah\nEXIT dit"
+	// "PTT dit\nEXIT dah"
 
-// CW key input selection (0-9) mapped to bitmap value - used for menu and eeprom
-static const uint8_t CW_KEY_INPUT_menu_to_bitmap[10] = {
+// CW key input selection (0-12) mapped to bitmap value - used for menu and EEPROM
+static const uint8_t CW_KEY_INPUT_menu_to_bitmap[] = {
 	0x08, // menu item 0: CW_KEY_FLAG_NO_KEYER - handkey only
 	0x18, // menu item 1: CW_KEY_FLAG_NO_KEYER | CW_KEY_FLAG_PORT_GROUND - handkey + port ground
 	0x04, // menu item 2: CW_KEY_FLAG_SIDE1 - buttons (PTT + SIDE1)
@@ -66,7 +70,10 @@ static const uint8_t CW_KEY_INPUT_menu_to_bitmap[10] = {
 	0x16, // menu item 6: CW_KEY_FLAG_SIDE1 | CW_KEY_FLAG_PORT_RING | CW_KEY_FLAG_PORT_GROUND - buttons + port ring + port ground
 	0x17, // menu item 7: CW_KEY_FLAG_SIDE1 | CW_KEY_FLAG_PORT_RING | CW_KEY_FLAG_PORT_GROUND | CW_KEY_FLAG_REVERSED - buttons + port ring + port ground + reversed
 	0x20, // menu item 8: CW_KEY_FLAG_ADC - ADC (CEC cable) input -- this can't work with PTT
-	0x21  // menu item 9: CW_KEY_FLAG_ADC | CW_KEY_FLAG_REVERSED - ADC (CEC cable) input + reversed
+	0x21, // menu item 9: CW_KEY_FLAG_ADC | CW_KEY_FLAG_REVERSED - ADC (CEC cable) input + reversed
+	0x28, // menu item 10: CW_KEY_FLAG_ADC | CW_KEY_FLAG_NO_KEYER - either CEC contact is a straight key
+	0x40, // menu item 11: CW_KEY_FLAG_EXIT - PTT dah + EXIT dit
+	0x41  // menu item 12: CW_KEY_FLAG_EXIT | CW_KEY_FLAG_REVERSED - PTT dit + EXIT dah
 };
 
 #define CW_KEY_INPUT_HANDKEY 0x08 // shortcut for the default no-keyer mode (menu item 0)

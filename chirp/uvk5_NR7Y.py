@@ -47,7 +47,10 @@ CW_KEY_INPUT_MODES = [
     "Both dah, Both dit",             # 6: 0x16
     "Both dit, Both dah",             # 7: 0x17
     "CEC (PTT dah, Tip dit)",         # 8: 0x20 - NEW beta3
-    "CEC (PTT dit, Tip dah)"          # 9: 0x21 - NEW beta3
+    "CEC (PTT dit, Tip dah)",         # 9: 0x21 - NEW beta3
+    "CEC HandKey",                    # 10: 0x28
+    "PTT dah, EXIT dit",              # 11: 0x40
+    "PTT dit, EXIT dah"               # 12: 0x41
 ]
 # Complete programmable key actions list from firmware (settings.h:105-127)
 # Beta3 extends with repeat actions - synced with firmware beta3
@@ -723,26 +726,26 @@ class UVK5_NR7Y(uvk5_egzumer.UVK5RadioEgzumer):
         self._mmap[CW_SETTINGS_ADDR + 1] = byte1
 
     def _get_cw_key_input_idx(self) -> int:
-        """Get key input mode index (0-9) - stored directly in bits 0-4"""
+        """Get key input mode index (0-15) - stored directly in bits 0-3"""
         byte2 = struct.unpack('B', bytes(self._mmap[CW_SETTINGS_ADDR+2:CW_SETTINGS_ADDR+3]))[0]
         if byte2 == 0xFF or byte2 >= 0x80:
             return 0  # Default HandKey
-        # bits 0-4 = menu index (0-9)
-        menu_idx = byte2 & 0x1F
+        # bits 0-3 = menu index; bit 5 is the split-RxMode compatibility marker
+        menu_idx = byte2 & 0x0F
         if menu_idx >= len(CW_KEY_INPUT_MODES):
             LOG.debug(f"Invalid key input menu index {menu_idx}, defaulting to HandKey")
             return 0
         return menu_idx
     
     def _set_cw_key_input_idx(self, idx: int) -> None:
-        """Set key input mode from index - stored directly in bits 0-5"""
+        """Set key input mode from index - stored directly in bits 0-3"""
         if idx < 0 or idx >= len(CW_KEY_INPUT_MODES):
             idx = 0
         byte2 = struct.unpack('B', bytes(self._mmap[CW_SETTINGS_ADDR+2:CW_SETTINGS_ADDR+3]))[0]
-        # Preserve bit 6 (break-in) and bit 5 (reserved), set bits 0-5 (menu index)
+        # Preserve bit 6 (break-in) and bit 5 (split-RxMode marker), set bits 0-3.
         break_in = (byte2 >> 6) & 0x01
         reserved = byte2 & 0x20
-        self._mmap[CW_SETTINGS_ADDR + 2] = (idx & 0x1F) | reserved | (break_in << 6)
+        self._mmap[CW_SETTINGS_ADDR + 2] = (idx & 0x0F) | reserved | (break_in << 6)
 
     def _get_cw_breakin(self) -> int:
         """Get CW break-in enable (0=OFF, 1=ON)"""
@@ -755,8 +758,8 @@ class UVK5_NR7Y(uvk5_egzumer.UVK5RadioEgzumer):
         """Set CW break-in enable (0=OFF, 1=ON)"""
         mode = 1 if mode else 0
         byte2 = struct.unpack('B', bytes(self._mmap[CW_SETTINGS_ADDR+2:CW_SETTINGS_ADDR+3]))[0]
-        # Preserve bits 0-4 (key input) and bit 5 (reserved), set bit 6 (break-in)
-        key_input = byte2 & 0x1F
+        # Preserve bits 0-3 (key input) and bit 5 (split-RxMode marker), set bit 6.
+        key_input = byte2 & 0x0F
         reserved = byte2 & 0x20
         self._mmap[CW_SETTINGS_ADDR + 2] = key_input | reserved | (mode << 6)
 
