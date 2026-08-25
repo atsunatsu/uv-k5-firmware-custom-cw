@@ -42,7 +42,7 @@
 
 ## 下载与刷机
 
-发布固件见 [Latest Release](https://github.com/natsumikka-maker/uv-k5-firmware-custom-cw/releases/latest)。在线刷写推荐 [UVTools Firmware Flasher](https://egzumer.github.io/uvtools/)：
+发布固件见 [Latest Release](https://github.com/atsunatsu/uv-k5-firmware-custom-cw/releases/latest)。在线刷写推荐 [UVTools Firmware Flasher](https://egzumer.github.io/uvtools/)：
 
 1. 下载 Release 中名称带 `.packed.bin` 的文件并核对 SHA-256。
 2. 关闭电台，插紧可靠的 Quansheng 编程线并确认电池充足。
