@@ -17,6 +17,7 @@
 - `CEC HandKey`：不改机器，使用现有 10K/20K CEC 电阻线连接外部直键；任一电阻触点都直接控制载波，不按 WPM 自动生成点划。
 - `PTT dah / EXIT dit` 与反向项：用机身 PTT、EXIT 组成 Iambic 双桨，支持 squeeze；主屏幕、CPO 及 CW 宏录制期间 EXIT 属于 keyer，其他菜单中仍可正常返回。
 - `CWmsg` Record/Play/Repeat 在 Split 模式下检查真正的 SUB 发射角色，因此 MAIN 可保持 USB 接收；PTT+EXIT 录制时按 MENU 保存。
+- 修复 `6K` 带宽分派：进入接收或发射参数配置时不再错误回退到 `Wide`，BK4819 会实际应用 6.25 kHz 配置。
 - CHIRP 驱动已同步新增 CW 输入项，并正确保留 Split-RxMode 使用的 EEPROM bit 5。
 
 ## 推荐设置
@@ -85,6 +86,7 @@ This fork is based on the NR7Y CW firmware from [zerodrool/uv-k5-firmware-custom
 - `CEC HandKey` uses the existing 10K/20K CEC resistor cable as an external straight key without modifying the radio. Either contact directly follows the physical key-down duration.
 - `PTT dah / EXIT dit` and its reversed option turn the radio PTT and front-panel EXIT key into an Iambic paddle pair with squeeze support.
 - Split-mode `CWmsg` Record/Play/Repeat validates the actual SUB transmit-role VFO, so MAIN may remain in USB. In PTT+EXIT recording, press MENU to save.
+- Fixes `6K` bandwidth dispatch: receive and transmit parameter setup no longer falls back to `Wide`, and the BK4819 now receives the intended 6.25 kHz profile.
 - The matching CHIRP driver includes the new CW input options while preserving the EEPROM bit used by Split RxMode.
 
 ### Recommended setup
