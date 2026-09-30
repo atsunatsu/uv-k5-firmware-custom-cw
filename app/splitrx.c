@@ -123,6 +123,18 @@ void SPLITRX_ApplyPendingInv(void)
 	gUpdateStatus = true;
 }
 
+// INV TRACK keeps MAIN:SUB paired at 3:1 (e.g. 435 MHz downlink : 145 MHz
+// uplink on a V/u inverting transponder, where the downlink Doppler swing is
+// about three times the uplink one). SUB absorbs one third of the MAIN delta,
+// opposite in sign, rounded to the nearest 10 Hz unit so that a 30 kHz MAIN
+// step moves SUB by exactly 10 kHz.
+static int64_t SPLITRX_ThirdDelta(const int64_t delta)
+{
+	const int64_t magnitude = (delta < 0) ? -delta : delta;
+	const int64_t third = (magnitude + 1) / 3;
+	return (delta < 0) ? -third : third;
+}
+
 bool SPLITRX_TuneMainFrequency(const uint32_t frequency)
 {
 	VFO_Info_t *const main = SPLITRX_GetMainVfo();
@@ -137,7 +149,7 @@ bool SPLITRX_TuneMainFrequency(const uint32_t frequency)
 
 	VFO_Info_t *const sub = SPLITRX_GetSubVfo();
 	const int64_t delta = (int64_t)frequency - main->freq_config_RX.Frequency;
-	const int64_t paired = (int64_t)sub->freq_config_RX.Frequency - delta;
+	const int64_t paired = (int64_t)sub->freq_config_RX.Frequency - SPLITRX_ThirdDelta(delta);
 
 	if (paired < 0 || paired > UINT32_MAX || RX_freq_check((uint32_t)paired) != 0)
 		return false;

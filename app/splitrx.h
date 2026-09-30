@@ -27,8 +27,10 @@ void SPLITRX_SetMode(bool enabled);
 void SPLITRX_ToggleInv(void);
 void SPLITRX_ApplyPendingInv(void);
 
-// Atomically changes MAIN and, when INV is on, applies the opposite delta to
-// SUB. Returns false without changing either VFO when the pair is illegal.
+// Atomically changes MAIN and, when INV is on, applies one third of the delta
+// to SUB in the opposite direction (3:1 pairing, so a 30 kHz MAIN step moves
+// SUB by 10 kHz). Returns false without changing either VFO when the pair is
+// illegal.
 bool SPLITRX_TuneMainFrequency(uint32_t frequency);
 
 #endif

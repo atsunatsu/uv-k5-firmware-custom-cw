@@ -11,7 +11,7 @@
 
 - `RxMode` 第五项 `MAIN RX / SUB TX`：空闲始终接收 MAIN，PTT 或 CW 发报时临时使用 SUB 发射，结束后约 300 ms 自动回 MAIN；屏幕选择和持久 `TX_VFO` 不被偷偷切换。
 - 发射时 SUB 行显示 `TX` 和配置的 `pTX` 频率。普通 CW 的 PLL 与该频率一致；若开启 `CWx`，实际载波会再加 `CWfreq`（默认 600 Hz），当前屏幕不包含这项偏移。
-- `INV TRACK`：开启后 MAIN 每次调谐的频差会等量反向应用到 SUB，适合倒置线性转发器的手动多普勒跟踪；关闭时 SUB 不跟随。
+- `INV TRACK`：开启后 MAIN 每次调谐的频差以 1/3 反向应用到 SUB（3:1 联动，SUB 取 MAIN 变化量的 −1/3，适合倒置线性转发器的手动多普勒跟踪；例：步进 30.00kHz 时每格 MAIN ±30 kHz、SUB 反向 ∓10 kHz）；关闭时 SUB 不跟随。
 - MAIN 可以用 CW 或 USB 接收；SUB 必须设为 CW 才能由 CW keyer 发射。
 - 保留 NR7Y 的 CEC Cable、CEC Cable Reversed、Iambic A/B、CW break-in、宏和真正载波键控。
 - `CEC HandKey`：不改机器，使用现有 10K/20K CEC 电阻线连接外部直键；任一电阻触点都直接控制载波，不按 WPM 自动生成点划。
@@ -40,7 +40,7 @@
 3. 设置 `RxMode = MAIN RX / SUB TX`。空闲时只监听 MAIN，使用 UP/DOWN 或直接输入频率调 MAIN。
 4. 用另一台接收机或 SDR 监听 SUB。在假负载或合法测试条件下轻点电键，确认只有 SUB 附近出现 RF，且屏幕 SUB 行显示 `TX`。上星普通 CW 建议关闭 `CWx`；若开启，实际载波为显示值加 `CWfreq`。
 5. 使用 CEC 双桨、CEC 直键或 PTT+EXIT 发报。松键后保持约 300 ms CW hang，再自动恢复 MAIN RX。
-6. 对倒置转发器按一次 `INV TRACK`，状态栏出现 `INV`。例如 MAIN 从 435.6200 降到 435.6195 MHz 时，SUB 会从 145.9850 升到 145.9855 MHz；再次按键关闭联调。
+6. 对倒置转发器按一次 `INV TRACK`，状态栏出现 `INV`；此后 MAIN 的调谐会按 1/3 反向联动 SUB（例：步进 30.00kHz，MAIN 从 435.6300 降到 435.6000 MHz 时，SUB 从 145.9600 升到 145.9700 MHz）；再次按键关闭联调。
 7. 发报过程中切换 INV 只会记录请求，完整 TX session 结束并回到 MAIN 后才生效，不会在一个 dit/dah 中途改频。
 8. 通联后记录 UTC、卫星、呼号、网格和实际频率修正，必要时上传日志/QSL。
 
@@ -80,7 +80,7 @@ This fork is based on the NR7Y CW firmware from [zerodrool/uv-k5-firmware-custom
 
 - The fifth `RxMode`, `MAIN RX / SUB TX`, keeps MAIN on receive and temporarily uses SUB for PTT or CW transmission. It returns to MAIN after the approximately 300 ms CW hang without silently changing the persistent selected VFO.
 - During transmission, the SUB row shows `TX` and the configured `pTX` frequency. In normal CW, the PLL uses that frequency. With `CWx` enabled, the actual carrier is shifted upward by `CWfreq` (600 Hz by default), and the current display does not include that shift.
-- `INV TRACK` applies every MAIN tuning delta equally and in the opposite direction to SUB for manual Doppler tracking on inverting linear transponders.
+- `INV TRACK` applies every MAIN tuning delta to SUB at one third of the magnitude, opposite in sign (3:1 pairing, SUB = −MAIN/3) for manual Doppler tracking on inverting linear transponders; with Step 30.00kHz, each click moves MAIN ±30 kHz and SUB ∓10 kHz.
 - MAIN may receive in CW or USB; SUB must be in CW for the CW keyer to transmit.
 - Existing NR7Y CEC Cable, reversed cable, Iambic A/B, break-in, macros, and true carrier keying remain available.
 - `CEC HandKey` uses the existing 10K/20K CEC resistor cable as an external straight key without modifying the radio. Either contact directly follows the physical key-down duration.
@@ -109,7 +109,7 @@ This fork is based on the NR7Y CW firmware from [zerodrool/uv-k5-firmware-custom
 3. Select `RxMode = MAIN RX / SUB TX`. MAIN remains the idle receiver and is tuned with UP/DOWN or direct frequency entry.
 4. Monitor SUB with another receiver or SDR. Under a dummy-load or otherwise legal test condition, tap the key and confirm RF near SUB while its row shows `TX`. Normal satellite CW should normally use `CWx` off; when it is on, the carrier is the displayed value plus `CWfreq`.
 5. Send with a CEC paddle, CEC straight key, or PTT+EXIT. The radio returns to MAIN receive after the CW hang.
-6. For an inverting transponder, enable `INV TRACK`; the status line shows `INV`. A 500 Hz downward MAIN adjustment produces a 500 Hz upward SUB adjustment.
+6. For an inverting transponder, enable `INV TRACK`; the status line shows `INV`. SUB follows every MAIN adjustment at one third of the delta, opposite in sign — with Step 30.00kHz, MAIN 435.6300 → 435.6000 MHz moves SUB 145.9600 → 145.9700 MHz.
 7. An INV change requested during CW transmission is deferred until the complete TX session ends, so frequency cannot change in the middle of a dit or dah.
 8. Log UTC, satellite, callsigns, grid locators, and the actual frequency correction after the contact.
 

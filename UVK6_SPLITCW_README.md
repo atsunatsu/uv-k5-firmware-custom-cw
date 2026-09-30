@@ -20,7 +20,8 @@
 `INV TRACK` 可分配给侧键，EEPROM 全复位后的默认分配是 `F2Shrt`：
 
 - INV 关闭：只调 MAIN。
-- INV 开启：MAIN 的频率差值会等量反向应用到 SUB；状态栏显示 `INV`。
+- INV 开启：MAIN 的频率差值以 1/3 反向应用到 SUB（3:1 配对，SUB = −MAIN/3，适配 435/145 MHz 倒置线性转发器）；例：步进 30.00kHz 时每格 MAIN ±30 kHz、SUB 反向 ∓10 kHz；状态栏显示 `INV`。
+- 步进取整沿用固件既有逻辑：起始频率不在步进网格上时第一格先吸附（30.00kHz 步进按 15 kHz 网格取整），之后每格为精确步进量。
 - 覆盖频率模式的 UP/DOWN step tuning 与键盘直接输入频率。
 - paired SUB 同时通过 RX 范围、实际 TX 频率与 TX lock 检查；失败时 MAIN/SUB 均不改变并发出错误音。
 - SUB 的 Doppler step 只改 RAM，不为每一步额外写 EEPROM。
@@ -83,7 +84,7 @@ make ENABLE_CW_MODULATOR=0 ENABLE_CODE_PRACTICE=0
 2. SDR 监听 SUB，用 CEC 双桨发送 `VVV`；确认 SUB 行显示 `TX` 和 SUB 发射频率，且 RF 只出现在该频率。
 3. 停止发报；确认约 300 ms 后恢复 MAIN RX。
 4. INV OFF，MAIN 下调 500 Hz；确认 SUB 不变且无额外状态文字。
-5. 短按 Side2 打开 INV；确认只显示 `INV`。MAIN 下调 500 Hz；确认 SUB 上调 500 Hz。
+5. 短按 Side2 打开 INV；确认只显示 `INV`。把步进设为 30.00kHz，MAIN 下调 30 kHz；确认 SUB 上调 10 kHz（可用 15 kHz→5 kHz、9 kHz→3 kHz 复核 1/3 比例）。
 6. 再短按 Side2；确认 `INV` 消失，后续 MAIN 调谐不再联动 SUB。
 7. 发报过程中短按 Side2；确认当前 dit/dah 及本次 TX session 不改变，结束回 MAIN RX 后 INV 才切换。
 8. 把 SUB 设置到 TX lock 禁止的频率后尝试 CW；确认错误音、无 RF，并仍恢复 MAIN RX，内部 VFO 不会卡在 SUB。
@@ -117,7 +118,8 @@ The fifth `RxMode`, `MAIN RX / SUB TX`, behaves as follows:
 `INV TRACK`, assigned to `F2Shrt` after a full EEPROM reset:
 
 - With INV off, only MAIN tunes.
-- With INV on, each MAIN frequency delta is applied equally and oppositely to SUB; the status line shows `INV`.
+- With INV on, each MAIN frequency delta is applied to SUB at one third of the magnitude, opposite in sign (3:1 pairing, SUB = −MAIN/3; with Step 30.00kHz, MAIN ±30 kHz per click moves SUB ∓10 kHz); the status line shows `INV`.
+- Step rounding keeps the existing firmware behaviour: the first click snaps onto the step grid when the starting frequency is off-grid (the 30.00kHz step rounds on a 15 kHz grid); subsequent clicks are exact.
 - It covers UP/DOWN step tuning and direct frequency entry.
 - The paired SUB is checked against RX limits, its resulting TX frequency, and TX lock. Failure leaves both frequencies unchanged and emits an error beep.
 - Doppler steps update SUB in RAM without an EEPROM write for every step.
@@ -184,7 +186,7 @@ A full EEPROM `Reset ALL` after flashing can be used when deterministic defaults
 2. Monitor SUB with an SDR and send `VVV`; verify SUB shows `TX` and RF appears at the expected frequency. Keep `CWx` off for carrier-equals-display testing.
 3. Stop keying and verify MAIN receive returns after approximately 300 ms.
 4. With INV off, move MAIN by 500 Hz and verify SUB does not move.
-5. Enable INV and verify the status indicator; move MAIN down 500 Hz and verify SUB moves up 500 Hz.
+5. Enable INV and verify the status indicator; with Step 30.00kHz, move MAIN down 30 kHz and verify SUB moves up 10 kHz (cross-check 15 kHz→5 kHz and 9 kHz→3 kHz for the one-third ratio).
 6. Disable INV and verify later MAIN tuning no longer moves SUB.
 7. Toggle INV during keying and verify it takes effect only after the full TX session ends.
 8. Put SUB on a TX-locked frequency and verify an error beep, no RF, and a clean return to MAIN.
